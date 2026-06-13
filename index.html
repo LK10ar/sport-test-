@@ -1,0 +1,442 @@
+Voici la version 2.0, conçue pour répondre aux standards d'un web designer.
+L'architecture a été entièrement repensée : **100% responsive (Mobile-First)**, avec un système d'**automatisation via localStorage** (tes données sont sauvegardées sur ton appareil, même si tu fermes la page), une remise à zéro automatique de l'hydratation et des entraînements chaque nouveau jour, et l'ajout de **notifications Toast** pour un retour visuel premium.
+Copie ce code dans ton fichier index.html.
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DR.73 | Pro Tracker</title>
+    <style>
+        :root {
+            --bg-base: #0b0f19;
+            --surface: rgba(30, 41, 59, 0.65);
+            --surface-hover: rgba(30, 41, 59, 0.85);
+            --primary: #0ea5e9;
+            --primary-glow: rgba(14, 165, 233, 0.5);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --success: #10b981;
+            --danger: #ef4444;
+            --border: rgba(255, 255, 255, 0.08);
+            --radius-lg: 20px;
+            --radius-md: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background-color: #000; /* Fond noir profond derrière l'app */
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Conteneur type App Mobile */
+        .app-layout {
+            width: 100%;
+            max-width: 430px; /* Largeur standard iPhone Pro Max */
+            background: radial-gradient(circle at top right, #1e293b, var(--bg-base));
+            min-height: 100vh;
+            position: relative;
+            padding-bottom: 90px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        }
+
+        header {
+            padding: 30px 24px 20px;
+            background: linear-gradient(to bottom, rgba(11,15,25,0.9), transparent);
+            position: sticky; top: 0; z-index: 10;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .brand { display: flex; justify-content: space-between; align-items: center; }
+        h1 { font-size: 22px; font-weight: 800; tracking: -0.5px; }
+        .badge-pro { background: var(--primary); font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;}
+        .date-display { font-size: 13px; color: var(--text-dim); margin-top: 5px; font-weight: 500;}
+
+        /* Gestion des vues */
+        .view { display: none; padding: 0 20px; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .view.active { display: block; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Composants UI */
+        .glass-card {
+            background: var(--surface); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border); border-radius: var(--radius-lg);
+            padding: 24px; margin-bottom: 20px;
+        }
+
+        .section-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
+        h2 { font-size: 16px; font-weight: 600; }
+        .target-val { font-size: 14px; color: var(--primary); font-weight: 600; }
+
+        /* Input & Controls */
+        .input-group { display: flex; gap: 12px; margin-bottom: 20px; }
+        input[type="number"] {
+            flex: 1; background: rgba(0,0,0,0.4); border: 1px solid var(--border);
+            color: white; padding: 12px; border-radius: var(--radius-md);
+            font-size: 16px; font-weight: 600; text-align: center;
+            transition: var(--transition);
+        }
+        input[type="number"]:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); }
+        
+        .btn {
+            background: var(--primary); color: white; border: none;
+            padding: 12px 20px; border-radius: var(--radius-md);
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: var(--transition); display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
+
+        /* Progress Bar (Automatisée) */
+        .metrics-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; font-weight: 500; }
+        .track { background: rgba(0,0,0,0.5); height: 10px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+        .fill { background: linear-gradient(90deg, #0284c7, var(--primary)); height: 100%; border-radius: 10px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px var(--primary-glow); }
+
+        /* Grid Macros */
+        .macro-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .macro-box {
+            background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+            border-radius: var(--radius-md); padding: 16px 10px; text-align: center;
+        }
+        .m-val { font-size: 20px; font-weight: 700; color: var(--primary); }
+        .m-lbl { font-size: 11px; color: var(--text-dim); text-transform: uppercase; margin-top: 4px; letter-spacing: 0.5px; }
+
+        /* Liste des tâches (Automatisée) */
+        .task-list { display: flex; flex-direction: column; gap: 12px; }
+        .task-item {
+            background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: var(--radius-md);
+            padding: 16px; display: flex; justify-content: space-between; align-items: center; transition: var(--transition);
+        }
+        .task-item.done { opacity: 0.6; border-color: var(--success); }
+        .task-item.done .t-title { text-decoration: line-through; color: var(--text-dim); }
+        .t-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+        .t-desc { font-size: 12px; color: var(--text-dim); }
+        
+        /* Checkbox Custom */
+        .custom-check {
+            width: 24px; height: 24px; border: 2px solid var(--text-dim); border-radius: 6px;
+            display: flex; align-items: center; justify-content: center; cursor: pointer; transition: var(--transition);
+        }
+        .task-item.done .custom-check { background: var(--success); border-color: var(--success); }
+        .custom-check::after { content: '✓'; color: white; opacity: 0; font-size: 14px; font-weight: bold; }
+        .task-item.done .custom-check::after { opacity: 1; }
+
+        /* Navigation Mobile */
+        .nav-bar {
+            position: fixed; bottom: 0; width: 100%; max-width: 430px;
+            background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border); display: flex; justify-content: space-around;
+            padding: 12px 10px 24px; z-index: 50;
+        }
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+            color: var(--text-dim); border: none; background: none; font-size: 11px; font-weight: 600;
+            width: 60px; transition: var(--transition); cursor: pointer;
+        }
+        .nav-item svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 2; fill: none; transition: var(--transition); }
+        .nav-item.active { color: var(--primary); }
+        .nav-item.active svg { transform: translateY(-3px); filter: drop-shadow(0 4px 6px var(--primary-glow)); }
+
+        /* Toast Notifications */
+        #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; pointer-events: none;}
+        .toast {
+            background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(10px); border-left: 4px solid var(--primary);
+            color: white; padding: 16px; border-radius: 8px; font-size: 14px; font-weight: 500;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.5s forwards;
+        }
+        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeOut { to { opacity: 0; visibility: hidden; } }
+
+    </style>
+</head>
+<body>
+
+<div class="app-layout">
+    <div id="toast-container"></div>
+
+    <header>
+        <div class="brand">
+            <h1>DR.73</h1>
+            <span class="badge-pro">Système Actif</span>
+        </div>
+        <div class="date-display" id="currentDate">--</div>
+    </header>
+
+    <main id="view-dash" class="view active">
+        <div class="glass-card">
+            <div class="section-header">
+                <h2>Évolution Structurelle</h2>
+                <span class="target-val">Cible : 64.4 kg</span>
+            </div>
+            
+            <div class="input-group">
+                <input type="number" id="inpWeight" step="0.1" inputmode="decimal">
+                <button class="btn" onclick="app.updateWeight()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg>
+                    Sync
+                </button>
+            </div>
+
+            <div class="metrics-row">
+                <span style="color: var(--text-dim)">Actuel : <strong id="lblWeight" style="color:var(--text-main)">--</strong> kg</span>
+                <span>Reste : <strong id="lblLeft">--</strong> kg</span>
+            </div>
+            <div class="track"><div class="fill" id="barWeight" style="width: 0%;"></div></div>
+        </div>
+
+        <div class="glass-card">
+            <div class="section-header">
+                <h2>Données Biométriques</h2>
+            </div>
+            <div class="task-list">
+                <div class="task-item">
+                    <span class="t-title" style="margin:0;">Masse Grasse</span>
+                    <span style="color: var(--success); font-weight: bold; font-size: 16px;">11.0 %</span>
+                </div>
+                <div class="task-item">
+                    <span class="t-title" style="margin:0;">Taux de Protéines</span>
+                    <span style="color: var(--success); font-weight: bold; font-size: 16px;">20.3 %</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <main id="view-diet" class="view">
+        <div class="glass-card">
+            <div class="section-header">
+                <h2>Macro-Nutriments</h2>
+                <span class="target-val">🔥 2800 kcal</span>
+            </div>
+            <div class="macro-grid">
+                <div class="macro-box"><div class="m-val">140g</div><div class="m-lbl">Protéines</div></div>
+                <div class="macro-box"><div class="m-val">400g</div><div class="m-lbl">Glucides</div></div>
+                <div class="macro-box"><div class="m-val">70g</div><div class="m-lbl">Lipides</div></div>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <div class="section-header">
+                <h2>Hydratation Journalière</h2>
+                <span class="target-val" id="lblWater">0 / 3.0 L</span>
+            </div>
+            <div class="track" style="margin-bottom: 20px;"><div class="fill" id="barWater" style="width: 0%;"></div></div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" style="flex:1;" onclick="app.addWater(0.5)">+ 500 ml</button>
+                <button class="btn btn-outline" onclick="app.resetWater()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <main id="view-workout" class="view">
+        <div class="glass-card">
+            <div class="section-header">
+                <h2>Phase 1 : Poussée</h2>
+                <span class="target-val">Progression : <span id="lblWorkout">0%</span></span>
+            </div>
+            <div class="task-list" id="workoutList">
+                </div>
+        </div>
+    </main>
+
+    <nav class="nav-bar">
+        <button class="nav-item active" onclick="app.switchTab('dash', this)">
+            <svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"></path></svg>
+            Data
+        </button>
+        <button class="nav-item" onclick="app.switchTab('diet', this)">
+            <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            Diet
+        </button>
+        <button class="nav-item" onclick="app.switchTab('workout', this)">
+            <svg viewBox="0 0 24 24"><path d="M2 12h5l2-9 5 18 2-9h6"></path></svg>
+            Workout
+        </button>
+    </nav>
+</div>
+
+<script>
+/**
+ * DR.73 Pro Tracker - Core Logic
+ * Gère le localStorage, la réactivité UI et les resets quotidiens.
+ */
+const app = {
+    config: { startWeight: 60.4, targetWeight: 64.4, targetWater: 3.0 },
+    
+    // Base de données locale
+    data: {
+        weight: 60.4,
+        water: 0,
+        lastLogin: new Date().toLocaleDateString('fr-FR'),
+        workouts: [
+            { id: 'w1', title: 'Développé Incliné', desc: '4 séries x 8-10 reps', done: false },
+            { id: 'w2', title: 'Développé Militaire', desc: '4 séries x 8-10 reps', done: false },
+            { id: 'w3', title: 'Élévations Latérales', desc: '5 séries x 15 reps', done: false },
+            { id: 'w4', title: 'Dips Lestés', desc: '3 séries x Max', done: false }
+        ]
+    },
+
+    init() {
+        this.setDate();
+        this.loadData();
+        this.renderAll();
+    },
+
+    // Affiche la date formatée
+    setDate() {
+        const options = { weekday: 'long', day: 'numeric', month: 'long' };
+        document.getElementById('currentDate').innerText = new Date().toLocaleDateString('fr-FR', options).toUpperCase();
+    },
+
+    // Charge & vérifie si c'est un nouveau jour pour reset les compteurs journaliers
+    loadData() {
+        const saved = localStorage.getItem('dr73_app_data');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            const today = new Date().toLocaleDateString('fr-FR');
+            
+            // Si nouveau jour = Reset hydratation et entraînements
+            if (parsed.lastLogin !== today) {
+                parsed.water = 0;
+                parsed.workouts.forEach(w => w.done = false);
+                parsed.lastLogin = today;
+                this.toast("Nouveau jour : Trackers réinitialisés");
+            }
+            this.data = { ...this.data, ...parsed };
+        }
+    },
+
+    saveData() {
+        localStorage.setItem('dr73_app_data', JSON.stringify(this.data));
+    },
+
+    // --- MOTEUR POIDS ---
+    updateWeight() {
+        let val = parseFloat(document.getElementById('inpWeight').value);
+        if (!val || val < 40 || val > 100) return this.toast("Valeur incorrecte", "err");
+        
+        this.data.weight = val;
+        this.saveData();
+        this.renderWeight();
+        this.toast(`Poids synchronisé : ${val} kg`);
+    },
+
+    renderWeight() {
+        const { weight } = this.data;
+        const { startWeight, targetWeight } = this.config;
+        
+        document.getElementById('inpWeight').value = weight;
+        document.getElementById('lblWeight').innerText = weight.toFixed(1);
+        
+        let left = (targetWeight - weight).toFixed(1);
+        document.getElementById('lblLeft').innerText = left > 0 ? left : "0.0";
+
+        let progress = ((weight - startWeight) / (targetWeight - startWeight)) * 100;
+        if(progress < 0) progress = 0; if(progress > 100) progress = 100;
+        
+        // Timeout pour l'animation CSS fluide au chargement
+        setTimeout(() => {
+            document.getElementById('barWeight').style.width = `${Math.max(5, progress)}%`;
+        }, 100);
+    },
+
+    // --- MOTEUR HYDRATATION ---
+    addWater(amount) {
+        if (this.data.water >= this.config.targetWater) {
+            return this.toast("Objectif d'hydratation atteint !");
+        }
+        this.data.water += amount;
+        if(this.data.water > this.config.targetWater) this.data.water = this.config.targetWater;
+        this.saveData();
+        this.renderWater();
+    },
+
+    resetWater() {
+        this.data.water = 0;
+        this.saveData();
+        this.renderWater();
+        this.toast("Hydratation réinitialisée");
+    },
+
+    renderWater() {
+        document.getElementById('lblWater').innerText = `${this.data.water.toFixed(1)} / ${this.config.targetWater.toFixed(1)} L`;
+        let pct = (this.data.water / this.config.targetWater) * 100;
+        document.getElementById('barWater').style.width = `${pct}%`;
+    },
+
+    // --- MOTEUR WORKOUT ---
+    toggleWorkout(index) {
+        this.data.workouts[index].done = !this.data.workouts[index].done;
+        this.saveData();
+        this.renderWorkouts();
+    },
+
+    renderWorkouts() {
+        const container = document.getElementById('workoutList');
+        container.innerHTML = '';
+        let completed = 0;
+
+        this.data.workouts.forEach((w, i) => {
+            if(w.done) completed++;
+            container.innerHTML += `
+                <div class="task-item ${w.done ? 'done' : ''}" onclick="app.toggleWorkout(${i})">
+                    <div>
+                        <div class="t-title">${w.title}</div>
+                        <div class="t-desc">${w.desc}</div>
+                    </div>
+                    <div class="custom-check"></div>
+                </div>
+            `;
+        });
+
+        const progress = Math.round((completed / this.data.workouts.length) * 100);
+        document.getElementById('lblWorkout').innerText = `${progress}%`;
+        if(progress === 100 && completed > 0) this.toast("Séance terminée. Bien joué.");
+    },
+
+    // --- UTILITAIRES ---
+    renderAll() {
+        this.renderWeight();
+        this.renderWater();
+        this.renderWorkouts();
+    },
+
+    switchTab(viewId, btnElement) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+        
+        document.getElementById('view-' + viewId).classList.add('active');
+        btnElement.classList.add('active');
+        
+        // Déclenche une vibration haptique sur mobile si supporté
+        if(navigator.vibrate) navigator.vibrate(50);
+    },
+
+    toast(msg, type = "ok") {
+        const container = document.getElementById('toast-container');
+        const t = document.createElement('div');
+        t.className = 'toast';
+        if(type === "err") t.style.borderLeftColor = "var(--danger)";
+        t.innerText = msg;
+        container.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+    }
+};
+
+// Initialisation au chargement du DOM
+document.addEventListener('DOMContentLoaded', () => app.init());
+
+</script>
+</body>
+</html>
+
+```
