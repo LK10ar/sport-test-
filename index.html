@@ -3,292 +3,542 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DR.73 | MASTER O.S</title>
+    <title>DR.73 | ARCHITECTURE FRONT-END ÉTENDUE</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* ==========================================================================
+           1. CSS VARIABLES & SYSTEM THEME
+           ========================================================================== */
         :root {
-            --bg-base: #030303; --surface: #0a0a0a; --surface-2: #141414;
-            --brand: #dc2626; --brand-glow: rgba(220, 38, 38, 0.3);
-            --accent-cyan: #06b6d4; --accent-green: #10b981; --accent-warn: #f59e0b;
-            --text-main: #f8fafc; --text-dim: #64748b; --border: #1e293b;
-            --radius: 12px;
+            --bg-master: #050505; --surface-1: #0f0f11; --surface-2: #18181b; --surface-3: #27272a;
+            --brand-primary: #e11d48; --brand-hover: #be123c; --brand-glow: rgba(225, 29, 72, 0.4);
+            --accent-cyan: #06b6d4; --accent-cyan-glow: rgba(6, 182, 212, 0.3);
+            --accent-green: #10b981; --accent-amber: #f59e0b; --accent-purple: #8b5cf6;
+            --text-100: #f8fafc; --text-200: #e2e8f0; --text-300: #cbd5e1; --text-400: #94a3b8; --text-500: #64748b;
+            --border-light: rgba(255, 255, 255, 0.08); --border-solid: #27272a;
+            --radius-xs: 4px; --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-full: 9999px;
+            --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            --transition-fast: 0.15s ease-in-out; --transition-normal: 0.3s ease;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg-base); color: var(--text-main); padding-bottom: 90px; overflow-x: hidden; }
 
-        /* HEADER */
-        header { position: sticky; top: 0; background: rgba(3,3,3,0.9); backdrop-filter: blur(10px); padding: 15px 20px; border-bottom: 1px solid var(--border); z-index: 100; display: flex; justify-content: space-between; align-items: center; }
-        .sys-title { font-weight: 900; font-size: 18px; letter-spacing: 1px; }
-        .sys-title span { color: var(--brand); }
-        .status-indicators { display: flex; gap: 8px; }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); }
-        .dot.active { background: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); }
+        /* ==========================================================================
+           2. RESET, BASE & TYPOGRAPHY
+           ========================================================================== */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-sans); -webkit-tap-highlight-color: transparent; }
+        html { scroll-behavior: smooth; }
+        body { background-color: var(--bg-master); color: var(--text-100); overflow-x: hidden; padding-bottom: 110px; font-size: 14px; line-height: 1.5; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: var(--bg-master); }
+        ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: var(--radius-full); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-500); }
+        
+        h1, h2, h3, h4, h5, h6 { font-weight: 800; letter-spacing: -0.02em; color: var(--text-100); }
+        .text-cyan { color: var(--accent-cyan); } .text-green { color: var(--accent-green); } .text-amber { color: var(--accent-amber); } .text-brand { color: var(--brand-primary); } .text-purple { color: var(--accent-purple); }
+        .text-muted { color: var(--text-400); font-size: 12px; } .font-mono { font-family: var(--font-mono); }
 
-        /* VIEWS */
-        .view { display: none; padding: 15px; animation: fadeIn 0.3s ease; gap: 15px; flex-direction: column; }
+        /* ==========================================================================
+           3. LAYOUT & NAVIGATION
+           ========================================================================== */
+        .app-shell { max-width: 540px; margin: 0 auto; min-height: 100vh; position: relative; border-left: 1px solid var(--border-light); border-right: 1px solid var(--border-light); background: var(--surface-1); box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        
+        header.top-nav {
+            position: sticky; top: 0; z-index: 1000; background: rgba(15, 15, 17, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            padding: 16px 24px; border-bottom: 1px solid var(--border-solid); display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm);
+        }
+        .logo-container { display: flex; flex-direction: column; }
+        .logo { font-size: 22px; font-weight: 900; letter-spacing: 1px; line-height: 1; }
+        .logo span { color: var(--brand-primary); }
+        .sys-status { font-size: 9px; font-weight: 700; text-transform: uppercase; color: var(--accent-green); letter-spacing: 1px; display: flex; align-items: center; gap: 4px; margin-top: 4px; }
+        .pulse-dot { width: 6px; height: 6px; background-color: var(--accent-green); border-radius: 50%; box-shadow: 0 0 8px var(--accent-green); animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+
+        nav.bottom-bar {
+            position: fixed; bottom: 0; width: 100%; max-width: 538px; background: rgba(24, 24, 27, 0.95); backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border-solid); display: flex; justify-content: space-around; align-items: center; padding: 12px 10px 24px; z-index: 1000;
+        }
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--text-500); background: transparent; border: none;
+            font-size: 10px; font-weight: 800; text-transform: uppercase; cursor: pointer; transition: var(--transition-normal); width: 25%;
+        }
+        .nav-item.active { color: var(--text-100); }
+        .nav-icon-container { width: 32px; height: 32px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; transition: var(--transition-normal); background: transparent; }
+        .nav-item.active .nav-icon-container { background: var(--brand-primary); box-shadow: 0 4px 12px var(--brand-glow); }
+        .nav-item svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: none; transition: var(--transition-normal); }
+
+        /* ==========================================================================
+           4. VIEW MANAGEMENT & ANIMATIONS
+           ========================================================================== */
+        .view { display: none; padding: 20px; animation: fadeSlideUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; flex-direction: column; gap: 20px; }
         .view.active { display: flex; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeSlideUp { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
 
-        /* PANELS */
-        .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; position: relative; overflow: hidden; }
-        .p-title { font-size: 11px; text-transform: uppercase; color: var(--text-dim); font-weight: 800; letter-spacing: 1px; margin-bottom: 12px; display: flex; justify-content: space-between; }
+        /* ==========================================================================
+           5. UI COMPONENTS
+           ========================================================================== */
+        .card { background: var(--surface-2); border: 1px solid var(--border-solid); border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow-md); position: relative; overflow: hidden; }
+        .card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: linear-gradient(90deg, transparent, var(--border-light), transparent); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .card-title { font-size: 13px; font-weight: 800; color: var(--text-300); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; }
         
-        /* 1. DASHBOARD: Readiness & Circadian */
-        .readiness-grid { display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: center; }
-        .r-score { width: 80px; height: 80px; border-radius: 50%; border: 4px solid var(--border); border-top-color: var(--accent-green); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .r-val { font-size: 24px; font-weight: 900; }
-        .circadian-track { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
-        .c-block { background: var(--surface-2); padding: 10px; border-radius: 8px; min-width: 100px; border: 1px solid transparent; }
-        .c-block.active { border-color: var(--accent-cyan); background: rgba(6, 182, 212, 0.1); }
-        .c-time { font-size: 12px; color: var(--accent-cyan); font-weight: bold; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--surface-3); color: var(--text-100); border: 1px solid var(--border-solid); padding: 12px 20px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 700; cursor: pointer; transition: var(--transition-fast); text-align: center; width: 100%; }
+        .btn:hover { background: var(--border-solid); }
+        .btn:active { transform: scale(0.97); }
+        .btn-primary { background: var(--brand-primary); color: white; border-color: var(--brand-primary); box-shadow: 0 4px 15px var(--brand-glow); }
+        .btn-primary:hover { background: var(--brand-hover); border-color: var(--brand-hover); }
+
+        .input-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; width: 100%; }
+        .input-label { font-size: 11px; color: var(--text-400); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
+        .form-control { width: 100%; background: var(--bg-master); border: 1px solid var(--border-solid); color: var(--text-100); padding: 14px 16px; border-radius: var(--radius-sm); font-size: 14px; transition: var(--transition-fast); }
+        .form-control:focus { outline: none; border-color: var(--brand-primary); box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.2); }
+        .form-control::placeholder { color: var(--text-500); }
+
+        .badge { display: inline-flex; align-items: center; padding: 4px 8px; border-radius: var(--radius-xs); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .badge-cyan { background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); border: 1px solid rgba(6, 182, 212, 0.3); }
+        .badge-green { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-brand { background: rgba(225, 29, 72, 0.15); color: var(--brand-primary); border: 1px solid rgba(225, 29, 72, 0.3); }
+
+        /* ==========================================================================
+           6. SPECIFIC MODULES
+           ========================================================================== */
         
-        /* 2. AI ENGINE & VBT */
-        .cam-box { width: 100%; height: 200px; background: #000; border-radius: 8px; position: relative; overflow: hidden; border: 1px solid var(--border); }
-        video { width: 100%; height: 100%; object-fit: cover; filter: grayscale(20%); }
-        .overlay-skeleton { position: absolute; inset: 0; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><line x1="50%" y1="20%" x2="50%" y2="80%" stroke="rgba(6,182,212,0.5)" stroke-width="2" stroke-dasharray="5,5"/></svg>'); }
-        .hud-vbt { position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.8); padding: 8px; border-radius: 6px; border-left: 2px solid var(--accent-cyan); }
-        .heatmap-mock { height: 150px; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50" y="50" fill="%23333" font-size="10" text-anchor="middle">3D BODY RENDER</text></svg>') center/cover var(--surface-2); border-radius: 8px; display: flex; align-items: flex-end; padding: 10px; gap: 10px; }
-        .hm-tag { font-size: 10px; padding: 4px 8px; border-radius: 4px; background: var(--brand); font-weight: bold; }
+        /* Dashboard - Readiness */
+        .readiness-container { display: flex; gap: 24px; align-items: center; background: var(--bg-master); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-solid); }
+        .readiness-ring { width: 90px; height: 90px; border-radius: 50%; border: 6px solid var(--surface-3); border-top-color: var(--accent-green); border-right-color: var(--accent-green); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; box-shadow: inset 0 0 20px rgba(16,185,129,0.1); transform: rotate(-45deg); }
+        .readiness-ring-content { transform: rotate(45deg); display: flex; flex-direction: column; align-items: center; }
+        .r-score { font-size: 28px; font-weight: 900; color: var(--text-100); line-height: 1; }
+        .metrics-list { display: flex; flex-direction: column; gap: 12px; flex: 1; }
+        .metric-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+        .metric-label { color: var(--text-400); display: flex; align-items: center; gap: 6px; }
+        .metric-value { font-weight: 800; font-family: var(--font-mono); }
 
-        /* 3. HEALTH & DIET */
-        .macro-bar { height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; margin-top: 4px; }
-        .macro-fill { height: 100%; background: var(--accent-cyan); }
-        .bio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .bio-card { background: var(--surface-2); padding: 12px; border-radius: 8px; }
+        /* Timeline Circadienne */
+        .timeline-scroll { display: flex; gap: 12px; overflow-x: auto; padding: 4px 4px 12px 4px; scrollbar-width: none; margin: 0 -4px; }
+        .time-node { flex: 0 0 auto; width: 130px; background: var(--bg-master); border: 1px solid var(--border-solid); padding: 16px; border-radius: var(--radius-md); transition: var(--transition-fast); }
+        .time-node.active { border-color: var(--brand-primary); background: rgba(225, 29, 72, 0.05); transform: translateY(-2px); box-shadow: 0 8px 16px -4px var(--brand-glow); }
+        .time-node-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+        
+        /* Library & Grid */
+        .filters-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; scrollbar-width: none; margin-bottom: 8px; }
+        .filter-chip { padding: 6px 12px; background: var(--surface-3); border: 1px solid var(--border-solid); border-radius: var(--radius-full); font-size: 11px; font-weight: 700; color: var(--text-300); cursor: pointer; white-space: nowrap; transition: var(--transition-fast); }
+        .filter-chip.active { background: var(--brand-primary); color: white; border-color: var(--brand-primary); }
+        
+        .exercise-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+        .ex-card { background: var(--bg-master); border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border-solid); transition: var(--transition-fast); }
+        .ex-card:hover { border-color: var(--text-500); transform: translateY(-2px); }
+        .ex-thumb { height: 120px; background: var(--surface-3); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+        .ex-thumb svg { width: 40px; height: 40px; opacity: 0.2; }
+        .ex-info { padding: 16px; }
+        .ex-title { font-size: 14px; font-weight: 800; margin-bottom: 6px; color: var(--text-100); }
+        .ex-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
 
-        /* 4. ENVIRONMENT & AUDIO */
-        .env-widget { display: flex; justify-content: space-between; align-items: center; background: linear-gradient(45deg, var(--surface-2), var(--surface)); padding: 16px; border-radius: 8px; }
-        .audio-player { background: #1DB954; color: black; padding: 12px; border-radius: 8px; display: flex; align-items: center; gap: 12px; font-weight: bold; }
+        /* Camera AI Feed */
+        .cam-container { width: 100%; height: 300px; background: #000; border-radius: var(--radius-md); position: relative; border: 1px solid var(--border-solid); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .cam-grid-overlay { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 40px 40px; }
+        .scan-line { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--accent-cyan); box-shadow: 0 0 10px var(--accent-cyan); animation: scan 3s linear infinite; opacity: 0.5; }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+        .vbt-hud { position: absolute; bottom: 16px; left: 16px; right: 16px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .hud-panel { background: rgba(0,0,0,0.85); border: 1px solid var(--border-light); padding: 12px; border-radius: var(--radius-sm); backdrop-filter: blur(8px); }
 
-        /* NAV */
-        nav { position: fixed; bottom: 0; width: 100%; background: rgba(10,10,10,0.95); backdrop-filter: blur(10px); border-top: 1px solid var(--border); display: flex; padding: 10px 0 25px; z-index: 100; }
-        .nav-btn { flex: 1; background: none; border: none; color: var(--text-dim); font-size: 10px; font-weight: 800; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-        .nav-btn.active { color: var(--brand); }
-        .nav-btn i { width: 20px; height: 20px; background: currentColor; border-radius: 4px; }
+        /* Macros & Progress */
+        .macro-tracker { background: var(--bg-master); border: 1px solid var(--border-solid); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 12px; }
+        .m-header { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 12px; font-weight: 800; }
+        .m-bar-bg { height: 8px; background: var(--surface-3); border-radius: var(--radius-full); overflow: hidden; }
+        .m-bar-fill { height: 100%; border-radius: var(--radius-full); transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
 
-        button.action-btn { background: var(--surface-2); color: white; border: 1px solid var(--border); padding: 10px; border-radius: 6px; font-weight: bold; width: 100%; margin-top: 10px; cursor: pointer; }
+        /* Lists */
+        .data-list { display: flex; flex-direction: column; gap: 8px; }
+        .data-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: var(--bg-master); border: 1px solid var(--border-solid); border-radius: var(--radius-sm); }
+        
+        /* Audio Sync */
+        .audio-player-pro { background: var(--bg-master); border: 1px solid var(--border-solid); padding: 16px; border-radius: var(--radius-md); display: flex; align-items: center; gap: 16px; }
+        .album-art { width: 56px; height: 56px; background: linear-gradient(45deg, #1DB954, #000); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; }
+        .play-btn { width: 36px; height: 36px; border-radius: 50%; background: #1DB954; color: black; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <header>
-        <div class="sys-title">DR.<span>73</span> O.S</div>
-        <div class="status-indicators">
-            <div class="dot active" id="dot-gps" title="GPS"></div>
-            <div class="dot" id="dot-cam" title="Camera"></div>
-            <div class="dot active" title="Local DB"></div>
+<div class="app-shell">
+    <header class="top-nav">
+        <div class="logo-container">
+            <div class="logo">DR.<span>73</span></div>
+            <div class="sys-status"><div class="pulse-dot"></div> CORE ONLINE</div>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-weight: 800; font-size: 13px;">L. BARROT</div>
+            <div class="text-muted font-mono" id="clock">00:00:00</div>
         </div>
     </header>
 
-    <main id="v-dash" class="view active">
-        <div class="panel">
-            <div class="p-title">Readiness Score & VFC</div>
-            <div class="readiness-grid">
-                <div class="r-score">
-                    <span class="r-val" style="color:var(--accent-green)">94</span>
-                    <span style="font-size:8px; color:var(--text-dim)">/100</span>
+    <main id="view-dashboard" class="view active">
+        <div class="card">
+            <div class="card-header"><span class="card-title">Score de Récupération (IA)</span></div>
+            <div class="readiness-container">
+                <div class="readiness-ring">
+                    <div class="readiness-ring-content">
+                        <span class="r-score">94</span>
+                        <span style="font-size: 10px; color: var(--text-400);">/100</span>
+                    </div>
                 </div>
-                <div style="font-size: 12px; line-height: 1.8;">
-                    <div style="display:flex; justify-content:space-between"><span>VFC Baseline</span> <strong>72 ms</strong></div>
-                    <div style="display:flex; justify-content:space-between"><span>SNC Fatigue</span> <strong style="color:var(--accent-green)">Basse</strong></div>
-                    <div style="display:flex; justify-content:space-between"><span>Sommeil</span> <strong>7h 42m</strong></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="panel">
-            <div class="p-title">Horloge Circadienne</div>
-            <div class="circadian-track">
-                <div class="c-block">
-                    <div class="c-time">09:00</div>
-                    <div style="font-size:11px; margin-top:4px;">Pic Cortisol</div>
-                </div>
-                <div class="c-block active">
-                    <div class="c-time">14:30</div>
-                    <div style="font-size:11px; margin-top:4px;">Force Max (Train)</div>
-                </div>
-                <div class="c-block">
-                    <div class="c-time">19:00</div>
-                    <div style="font-size:11px; margin-top:4px;">Peak GH / Repos</div>
+                <div class="metrics-list">
+                    <div class="metric-row">
+                        <span class="metric-label">VFC Base</span>
+                        <span class="metric-value text-green">74 ms</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Stress SNC</span>
+                        <span class="metric-value text-cyan">Bas</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Sommeil</span>
+                        <span class="metric-value text-100">8h 12m</span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="panel">
-            <div class="p-title">Tonnage Global (Plateaux)</div>
-            <canvas id="tonnageChart" height="150"></canvas>
+        <div class="card">
+            <div class="card-header"><span class="card-title">Chronologie Circadienne</span></div>
+            <div class="timeline-scroll">
+                <div class="time-node">
+                    <div class="time-node-header">
+                        <span class="font-mono text-muted">08:00</span>
+                        <span class="badge badge-cyan">Jeûne</span>
+                    </div>
+                    <div style="font-size: 12px; font-weight: 700;">Pic Cortisol</div>
+                    <div style="font-size: 10px; color: var(--text-400); margin-top: 4px;">Hydratation requise</div>
+                </div>
+                <div class="time-node active">
+                    <div class="time-node-header">
+                        <span class="font-mono text-brand">14:30</span>
+                        <span class="badge badge-brand">Force</span>
+                    </div>
+                    <div style="font-size: 12px; font-weight: 700; color: var(--brand-primary);">Fenêtre d'Entraînement</div>
+                    <div style="font-size: 10px; color: var(--text-400); margin-top: 4px;">Testostérone optimale</div>
+                </div>
+                <div class="time-node">
+                    <div class="time-node-header">
+                        <span class="font-mono text-muted">19:30</span>
+                        <span class="badge badge-green">Nutrition</span>
+                    </div>
+                    <div style="font-size: 12px; font-weight: 700;">Recharge Glucidique</div>
+                    <div style="font-size: 10px; color: var(--text-400); margin-top: 4px;">Repas post-effort</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Analyse Structurelle (Tonnage)</span>
+                <select style="background:var(--bg-master); border:1px solid var(--border-solid); color:var(--text-200); padding:4px 8px; border-radius:var(--radius-xs); font-size:11px; outline:none;">
+                    <option>7 Derniers Jours</option>
+                    <option>Mois Actuel</option>
+                </select>
+            </div>
+            <div style="height: 220px; width: 100%; position: relative;">
+                <canvas id="tonnageChart"></canvas>
+            </div>
         </div>
     </main>
 
-    <main id="v-ai" class="view">
-        <div class="panel">
-            <div class="p-title">Live Form Check & VBT <span>REC</span></div>
-            <div class="cam-box">
-                <video id="liveCam" autoplay playsinline></video>
-                <div class="overlay-skeleton"></div>
-                <div class="hud-vbt">
-                    <div style="font-size:10px; color:var(--accent-cyan);">Vitesse Barre</div>
-                    <div style="font-weight:900; font-size:18px;">0.82 <span style="font-size:10px">m/s</span></div>
+    <main id="view-ai" class="view">
+        <div class="card" style="padding: 12px;">
+            <div class="card-header" style="padding: 8px 8px 0;">
+                <span class="card-title"><span style="width:8px;height:8px;background:var(--brand-primary);border-radius:50%;display:inline-block;"></span> Scanner VBT & Posture</span>
+            </div>
+            <div class="cam-container" style="margin-top: 12px;">
+                <div class="cam-grid-overlay"></div>
+                <div class="scan-line"></div>
+                <div style="text-align:center; z-index:10; padding: 20px;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-500)" stroke-width="1.5" style="margin-bottom:12px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                    <p style="font-size: 12px; color: var(--text-400);">En attente de connexion matérielle.<br>Nécessite API Camera WebRTC.</p>
+                </div>
+                <div class="vbt-hud">
+                    <div class="hud-panel">
+                        <div style="font-size: 9px; color: var(--text-400); text-transform: uppercase;">Vitesse Concentrique</div>
+                        <div style="font-size: 18px; font-weight: 900; color: var(--text-100); font-family: var(--font-mono); margin-top: 2px;">-- m/s</div>
+                    </div>
+                    <div class="hud-panel" style="text-align: right;">
+                        <div style="font-size: 9px; color: var(--text-400); text-transform: uppercase;">RPE Cible</div>
+                        <div style="font-size: 18px; font-weight: 900; color: var(--accent-amber); font-family: var(--font-mono); margin-top: 2px;">8.0</div>
+                    </div>
                 </div>
             </div>
-            <button class="action-btn" onclick="sys.startCamera()">Connecter Caméra (IA)</button>
+            <button class="btn btn-primary" style="margin-top: 12px;">Activer Caméra IA</button>
         </div>
 
-        <div class="panel">
-            <div class="p-title">Heatmap SNC & Dommages</div>
-            <div class="heatmap-mock">
-                <div class="hm-tag">Épaules: LOCK</div>
-                <div class="hm-tag" style="background:var(--accent-green); color:black;">Dos: PRÊT</div>
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Bibliothèque Biomécanique</span>
+                <span class="text-muted font-mono">1542 Entrées</span>
             </div>
-            <p style="font-size:11px; color:var(--text-dim); margin-top:10px;">L'algorithme a verrouillé les mouvements de poussée verticale suite au stress accumulé hier.</p>
-        </div>
-    </main>
+            
+            <div class="input-group">
+                <input type="text" class="form-control" id="searchInput" placeholder="Rechercher (ex: Squat, Muscle-up)..." onkeyup="appEngine.filterExercises()">
+            </div>
+            
+            <div class="filters-bar" id="filterBar">
+                <div class="filter-chip active" onclick="appEngine.setFilter('Tout', this)">Tout</div>
+                <div class="filter-chip" onclick="appEngine.setFilter('Force', this)">Force</div>
+                <div class="filter-chip" onclick="appEngine.setFilter('Parkour', this)">Parkour / Agilité</div>
+                <div class="filter-chip" onclick="appEngine.setFilter('Hypertrophie', this)">Hypertrophie</div>
+            </div>
 
-    <main id="v-health" class="view">
-        <div class="panel">
-            <div class="p-title">Écosystème Nutrition</div>
-            <div style="margin-bottom:12px;">
-                <div style="display:flex; justify-content:space-between; font-size:12px;"><span>Kcal Ajustées (Dynamique)</span> <strong>2850</strong></div>
-                <div class="macro-bar"><div class="macro-fill" style="width: 100%"></div></div>
-            </div>
-            <div class="bio-grid">
-                <div class="bio-card">
-                    <div style="font-size:10px; color:var(--text-dim)">Indice PRAL</div>
-                    <div style="font-weight:bold; color:var(--accent-green)">-12 (Alcalin)</div>
+            <div class="exercise-grid" id="exerciseGrid">
                 </div>
-                <div class="bio-card">
-                    <div style="font-size:10px; color:var(--text-dim)">Autophagie</div>
-                    <div style="font-weight:bold;">Inactive</div>
-                </div>
-                <div class="bio-card">
-                    <div style="font-size:10px; color:var(--text-dim)">Peak Week</div>
-                    <div style="font-weight:bold; color:var(--text-dim)">OFF</div>
-                </div>
-                <div class="bio-card">
-                    <div style="font-size:10px; color:var(--text-dim)">CGM (Glycémie)</div>
-                    <div style="font-weight:bold; color:var(--accent-cyan)">95 mg/dL</div>
-                </div>
-            </div>
-            <button class="action-btn" style="border-color:var(--accent-cyan); color:var(--accent-cyan)">Scanner Aliment (Code Barre)</button>
         </div>
     </main>
 
-    <main id="v-life" class="view">
-        <div class="panel">
-            <div class="p-title">Logistique & Environnement</div>
-            <div class="env-widget">
+    <main id="view-health" class="view">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Moteur Nutritionnel</span>
+                <span class="badge badge-brand">2800 KCAL</span>
+            </div>
+            
+            <div class="macro-tracker">
+                <div class="m-header"><span>Protéines</span> <span class="font-mono">140g</span></div>
+                <div class="m-bar-bg"><div class="m-bar-fill" style="width: 80%; background: var(--brand-primary);"></div></div>
+            </div>
+            <div class="macro-tracker">
+                <div class="m-header"><span>Glucides</span> <span class="font-mono">400g</span></div>
+                <div class="m-bar-bg"><div class="m-bar-fill" style="width: 45%; background: var(--accent-amber);"></div></div>
+            </div>
+            <div class="macro-tracker">
+                <div class="m-header"><span>Lipides</span> <span class="font-mono">70g</span></div>
+                <div class="m-bar-bg"><div class="m-bar-fill" style="width: 60%; background: var(--accent-cyan);"></div></div>
+            </div>
+
+            <button class="btn" style="margin-top: 8px;">Scanner Aliment (Code Barre)</button>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><span class="card-title">Laboratoire & Biomarqueurs</span></div>
+            <div class="data-list">
+                <div class="data-item">
+                    <span class="text-muted font-weight-bold">Indice PRAL</span>
+                    <span class="badge badge-green">-15 (Alcalin)</span>
+                </div>
+                <div class="data-item">
+                    <span class="text-muted font-weight-bold">Glycémie (CGM)</span>
+                    <span class="font-mono text-cyan" style="font-weight: 800;">92 mg/dL</span>
+                </div>
+                <div class="data-item">
+                    <span class="text-muted font-weight-bold">Testostérone (Dernier Lab)</span>
+                    <span class="font-mono text-100" style="font-weight: 800;">720 ng/dL</span>
+                </div>
+                <div class="data-item">
+                    <span class="text-muted font-weight-bold">Peak Week Protocol</span>
+                    <span class="badge" style="background: var(--surface-3); color: var(--text-500);">INACTIF</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <main id="view-life" class="view">
+        <div class="card">
+            <div class="card-header"><span class="card-title">Variables Environnementales</span></div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <div>
-                    <div style="font-size:24px; font-weight:900;" id="gpsTemp">--°C</div>
-                    <div style="font-size:12px; color:var(--text-dim);" id="gpsLoc">Recherche GPS...</div>
+                    <div style="font-size: 32px; font-weight: 900; line-height: 1;">24°C</div>
+                    <div class="text-muted" style="margin-top: 4px;">Localisation GPS Activée</div>
                 </div>
-                <div style="text-align:right;">
-                    <div style="font-size:11px; color:var(--accent-warn)">Hydratation +0.5L requise</div>
-                    <div style="font-size:10px; color:var(--text-dim)">Humidité: <span id="gpsHum">--</span>%</div>
+                <div style="text-align: right;">
+                    <div style="font-size: 14px; font-weight: 800; color: var(--accent-cyan);">Humidité: 65%</div>
+                    <div style="font-size: 11px; color: var(--text-400); margin-top: 2px;">Eau suggérée: +500ml</div>
                 </div>
             </div>
-            <button class="action-btn" onclick="sys.getGPS()">Actualiser Météo Locale</button>
-        </div>
-
-        <div class="panel" style="padding:0; border:none; background:transparent;">
-            <div class="audio-player">
-                <div style="width:40px; height:40px; background:#000; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#1DB954;">▶</div>
-                <div style="flex:1;">
-                    <div style="font-size:14px;">BPM SYNC: RAWSTYLE</div>
-                    <div style="font-size:10px; font-weight:500;">Drop aligné sur phase concentrique</div>
-                </div>
+            
+            <div style="background: rgba(245, 158, 11, 0.1); border-left: 3px solid var(--accent-amber); padding: 16px; border-radius: var(--radius-sm); font-size: 13px;">
+                <strong class="text-amber">Agent Logistique :</strong> Détection d'un shift de travail "Aéroport". La séance lourde est automatiquement convertie en session "Mobilité & Récupération".
             </div>
         </div>
 
-        <div class="panel">
-            <div class="p-title">Community Wishboard & Master Coach</div>
-            <div style="background:var(--surface-2); padding:10px; border-radius:6px; font-size:12px; margin-bottom:10px;">
-                <strong>Feature Request:</strong> Intégration API Notion pour les logs. <span style="float:right; color:var(--accent-cyan)">↑ 142 Votes</span>
-            </div>
-            <div style="background:var(--surface-2); padding:10px; border-radius:6px; font-size:12px;">
-                <strong>Coach Feedback:</strong> "Forme solide sur le squat, garde le torse ouvert."
+        <div class="card" style="padding: 0; border: none; background: transparent;">
+            <div class="audio-player-pro">
+                <div class="album-art">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-size: 14px; font-weight: 900; letter-spacing: -0.5px;">SYNC AUDIO: RAWSTYLE</div>
+                    <div style="font-size: 11px; color: var(--text-400); margin-top: 2px;">Algorithme: Drop aligné sur phase concentrique.</div>
+                </div>
+                <button class="play-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                </button>
             </div>
         </div>
     </main>
 
-    <nav>
-        <button class="nav-btn active" onclick="sys.switchTab('v-dash', this)"><i></i>HUB</button>
-        <button class="nav-btn" onclick="sys.switchTab('v-ai', this)"><i></i>IA/VBT</button>
-        <button class="nav-btn" onclick="sys.switchTab('v-health', this)"><i></i>LABS</button>
-        <button class="nav-btn" onclick="sys.switchTab('v-life', this)"><i></i>LIFE</button>
+    <nav class="bottom-bar">
+        <button class="nav-item active" onclick="appEngine.switchView('view-dashboard', this)">
+            <div class="nav-icon-container">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </div>
+            HUB
+        </button>
+        <button class="nav-item" onclick="appEngine.switchView('view-ai', this)">
+            <div class="nav-icon-container">
+                <svg viewBox="0 0 24 24"><path d="M2 12h4l3-9 5 18 3-9h5"/></svg>
+            </div>
+            TRAIN
+        </button>
+        <button class="nav-item" onclick="appEngine.switchView('view-health', this)">
+            <div class="nav-icon-container">
+                <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            LABS
+        </button>
+        <button class="nav-item" onclick="appEngine.switchView('view-life', this)">
+            <div class="nav-icon-container">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            LIFE
+        </button>
     </nav>
+</div>
 
 <script>
-const sys = {
+const appEngine = {
+    currentCategory: 'Tout',
+    
+    // Massive Mock Database to simulate the 1500+ library
+    exercisesDB: [
+        { id: 1, name: "Développé Couché Incliné", target: "Haut Pectoraux", category: "Hypertrophie", difficulty: "Intermédiaire" },
+        { id: 2, name: "Muscle-Up Strict", target: "Dos / Triceps", category: "Parkour / Agilité", difficulty: "Avancé" },
+        { id: 3, name: "Saut de Précision", target: "SNC / Chaîne Post.", category: "Parkour / Agilité", difficulty: "Avancé" },
+        { id: 4, name: "Front Squat (Barre)", target: "Quadriceps", category: "Force", difficulty: "Intermédiaire" },
+        { id: 5, name: "Élévations Latérales (Câble)", target: "Delt. Latéral", category: "Hypertrophie", difficulty: "Débutant" },
+        { id: 6, name: "Tractions Lestées Pronation", target: "Grand Dorsal", category: "Force", difficulty: "Avancé" },
+        { id: 7, name: "Passement Rapide (Kong Vault)", target: "Agilité Globale", category: "Parkour / Agilité", difficulty: "Intermédiaire" },
+        { id: 8, name: "Soulevé de Terre Roumain", target: "Ischios / Fessiers", category: "Force", difficulty: "Intermédiaire" },
+        { id: 9, name: "Dips Lestés", target: "Pectoraux / Triceps", category: "Hypertrophie", difficulty: "Avancé" },
+        { id: 10, name: "Pliométrie : Box Jumps", target: "Explosivité", category: "Force", difficulty: "Intermédiaire" }
+    ],
+
     init() {
+        this.updateClock();
+        setInterval(() => this.updateClock(), 1000);
         this.initChart();
-        this.getGPS(); // Tente de choper le GPS direct si autorisé
+        this.renderExercises();
     },
 
-    // --- CHART.JS ---
+    updateClock() {
+        const now = new Date();
+        document.getElementById('clock').innerText = now.toLocaleTimeString('fr-FR');
+    },
+
+    switchView(viewId, btnElement) {
+        document.querySelectorAll('.view').forEach(v => {
+            v.classList.remove('active');
+            v.style.animation = 'none';
+        });
+        document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+        
+        const targetView = document.getElementById(viewId);
+        targetView.classList.add('active');
+        // Trigger reflow for animation
+        void targetView.offsetWidth; 
+        targetView.style.animation = 'fadeSlideUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards';
+        
+        btnElement.classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+
     initChart() {
         const ctx = document.getElementById('tonnageChart').getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 220);
+        gradient.addColorStop(0, 'rgba(225, 29, 72, 0.5)');
+        gradient.addColorStop(1, 'rgba(225, 29, 72, 0)');
+
         new Chart(ctx, {
             type: 'line',
             data: {
-                labels: ['S1', 'S2', 'S3', 'S4'],
+                labels: ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'],
                 datasets: [{
-                    label: 'Tonnage Global',
-                    data: [12000, 12500, 12400, 13100], // Simulation plateau S3
-                    borderColor: '#06b6d4',
-                    backgroundColor: 'rgba(6, 182, 212, 0.1)',
-                    borderWidth: 2, fill: true, tension: 0.4
+                    label: 'Tonnage Global (kg)',
+                    data: [11500, 12200, 12800, 12800, 13400, 14100],
+                    borderColor: '#e11d48',
+                    backgroundColor: gradient,
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#0f0f11',
+                    pointBorderColor: '#e11d48',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false } } } }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false }, ticks: { color: '#64748b', font: { family: 'SFMono-Regular' } } },
+                    x: { grid: { display: false }, ticks: { color: '#64748b', font: { weight: 'bold' } } }
+                },
+                interaction: { intersect: false, mode: 'index' }
+            }
         });
     },
 
-    // --- CAMERA (IA SIMULATION) ---
-    async startCamera() {
-        const video = document.getElementById('liveCam');
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-            video.srcObject = stream;
-            document.getElementById('dot-cam').classList.add('active');
-        } catch (err) {
-            alert("Caméra bloquée. Active les autorisations du navigateur.");
+    renderExercises(searchQuery = '') {
+        const grid = document.getElementById('exerciseGrid');
+        grid.innerHTML = '';
+        
+        const filtered = this.exercisesDB.filter(ex => {
+            const matchesSearch = ex.name.toLowerCase().includes(searchQuery.toLowerCase()) || ex.target.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesCategory = this.currentCategory === 'Tout' || ex.category === this.currentCategory;
+            return matchesSearch && matchesCategory;
+        });
+
+        if (filtered.length === 0) {
+            grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-500);">Aucun mouvement trouvé.</div>';
+            return;
         }
+
+        filtered.forEach(ex => {
+            let badgeClass = 'badge-cyan';
+            if(ex.category === 'Force') badgeClass = 'badge-brand';
+            if(ex.category === 'Parkour / Agilité') badgeClass = 'badge-green';
+
+            grid.innerHTML += `
+                <div class="ex-card">
+                    <div class="ex-thumb">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                        <div style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.8); padding: 4px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; border: 1px solid var(--border-light);">RENDER 3D</div>
+                    </div>
+                    <div class="ex-info">
+                        <div class="ex-title">${ex.name}</div>
+                        <div class="text-muted" style="margin-bottom: 12px; font-weight: 600;">Cible : ${ex.target}</div>
+                        <div class="ex-meta">
+                            <span class="badge ${badgeClass}">${ex.category}</span>
+                            <span style="font-size: 10px; color: var(--text-400); font-weight: 700;">${ex.difficulty}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
     },
 
-    // --- GPS & METEO (LIFE LOGISTICS) ---
-    getGPS() {
-        if ("geolocation" in navigator) {
-            navigator.geolocation.getCurrentPosition(async (position) => {
-                const lat = position.coords.latitude;
-                const lon = position.coords.longitude;
-                // Appel API publique Open-Meteo pour coller à la réalité
-                try {
-                    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=relativehumidity_2m`);
-                    const data = await res.json();
-                    document.getElementById('gpsTemp').innerText = data.current_weather.temperature + "°C";
-                    document.getElementById('gpsLoc').innerText = "Sync. Locale Active";
-                    document.getElementById('gpsHum').innerText = data.hourly.relativehumidity_2m[0];
-                    document.getElementById('dot-gps').classList.add('active');
-                } catch (e) {
-                    document.getElementById('gpsLoc').innerText = "Erreur Serveur Météo";
-                }
-            }, () => {
-                document.getElementById('gpsLoc').innerText = "GPS Refusé";
-            });
-        }
+    filterExercises() {
+        const query = document.getElementById('searchInput').value;
+        this.renderExercises(query);
     },
 
-    // --- NAVIGATION ---
-    switchTab(id, btn) {
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        btn.classList.add('active');
-        window.scrollTo(0,0);
+    setFilter(category, btnElement) {
+        this.currentCategory = category;
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        btnElement.classList.add('active');
+        this.filterExercises(); // Re-apply with current search
     }
 };
 
-window.onload = () => sys.init();
+document.addEventListener('DOMContentLoaded', () => appEngine.init());
 </script>
 </body>
 </html>
