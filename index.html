@@ -539,6 +539,48 @@ const appEngine = {
 };
 
 document.addEventListener('DOMContentLoaded', () => appEngine.init());
+// ACTIVATION RÉELLE DE LA CAMÉRA SUR LE BOUTON
+document.querySelector('.btn-primary').addEventListener('click', async function() {
+    const btn = this;
+    btn.innerText = "Connexion en cours...";
+    
+    try {
+        // Demande l'accès à la caméra arrière (idéal sur mobile)
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        
+        // Création de l'élément vidéo
+        const video = document.createElement('video');
+        video.autoplay = true;
+        video.playsInline = true;
+        video.style.width = '100%';
+        video.style.height = '100%';
+        video.style.objectFit = 'cover';
+        video.style.position = 'absolute';
+        video.style.top = '0';
+        video.style.left = '0';
+        video.style.zIndex = '1'; // Derrière l'UI
+        video.srcObject = stream;
+        
+        // Injection dans le conteneur
+        const camContainer = document.querySelector('.cam-container');
+        camContainer.appendChild(video);
+        
+        // Ajustement de l'UI par-dessus le flux vidéo
+        document.querySelector('.cam-grid-overlay').style.zIndex = '2';
+        document.querySelector('.scan-line').style.zIndex = '3';
+        const waitingText = camContainer.querySelector('div[style*="text-align:center"]');
+        if(waitingText) waitingText.style.display = 'none';
+        
+        btn.innerText = "Caméra Active";
+        btn.style.backgroundColor = "var(--accent-green)";
+        btn.style.borderColor = "var(--accent-green)";
+        
+    } catch (err) {
+        alert("Accès refusé ou caméra introuvable. Vérifie les permissions de Safari/Chrome pour GitHub Pages.");
+        btn.innerText = "Erreur Caméra";
+    }
+});
+
 </script>
 </body>
 </html>
